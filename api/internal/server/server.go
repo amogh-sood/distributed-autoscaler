@@ -17,7 +17,7 @@ type Server struct {
 }
 
 func New() *Server {
-	producer := kafka.NewProducer("localhost:9092", "hash")
+	producer := kafka.NewProducer("localhost:9092", "jobs")
 
 	r := chi.NewRouter()
 
