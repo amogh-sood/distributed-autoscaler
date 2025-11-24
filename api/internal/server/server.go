@@ -30,6 +30,9 @@ func New() *Server {
 	h := handlers.NewHashHandler(producer, redisClient)
 	r.Post("/hash", h.HandleHash)
 
+	statusHandler := handlers.NewStatusHandler(redisClient)
+	r.Get("/job/{id}", statusHandler.HandleStatus)
+
 	return &Server{
 		router:   r,
 		producer: producer,

@@ -20,3 +20,7 @@ func New(addr string) *Client {
 func (c *Client) Set(key, value string) error {
 	return c.rdb.Set(context.Background(), key, value, 0).Err()
 }
+
+func (c *Client) Get(key string) (string, error) {
+	return c.rdb.Get(context.Background(), key).Result()
+}
