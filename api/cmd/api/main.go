@@ -3,10 +3,12 @@ package main
 import (
 	"log"
 
+	"github.com/amogh-sood/distributed-autoscaler/api/internal/metrics"
 	"github.com/amogh-sood/distributed-autoscaler/api/internal/server"
 )
 
 func main() {
+	metrics.Register()
 	srv := server.New()
 
 	log.Println("Starting API service...")

@@ -8,6 +8,7 @@ import (
 
 	"github.com/amogh-sood/distributed-autoscaler/worker/internal/consumer"
 	"github.com/amogh-sood/distributed-autoscaler/worker/internal/metrics"
+	"github.com/amogh-sood/distributed-autoscaler/worker/internal/redis"
 )
 
 func main() {
@@ -15,13 +16,17 @@ func main() {
 
 	metrics.Register()
 
-	// expose Prometheus metrics
+	// Prometheus
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
-		log.Println("Worker: metrics on :9090/metrics")
+		log.Println("Worker metrics on :9090/metrics")
 		http.ListenAndServe(":9090", nil)
 	}()
 
-	c := consumer.NewConsumer("localhost:9092", "jobs", "worker-group")
+	// Redis
+	redisClient := redis.New("localhost:6379")
+
+	// Kafka consumer
+	c := consumer.NewConsumer("localhost:9092", "jobs", "worker-group", redisClient)
 	c.Start()
 }

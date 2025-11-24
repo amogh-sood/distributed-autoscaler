@@ -3,35 +3,20 @@ package hashing
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	"time"
-
-	"github.com/amogh-sood/distributed-autoscaler/worker/internal/metrics"
+	"strconv"
+	"strings"
 )
 
-func Mine(input string) (string, int) {
-	start := time.Now()
-
-	nonce := 0
-	var hash string
-
+func Mine(input string) (string, int64) {
+	var nonce int64
 	for {
-		nonce++
-		data := fmt.Sprintf("%s:%d", input, nonce)
-		sum := sha256.Sum256([]byte(data))
-		hash = hex.EncodeToString(sum[:])
+		data := input + strconv.FormatInt(nonce, 10)
+		hash := sha256.Sum256([]byte(data))
+		hexHash := hex.EncodeToString(hash[:])
 
-		metrics.NonceAttempts.Inc()
-
-		// found a hash with leading zeros
-		if hash[:4] == "0000" {
-			break
+		if strings.HasPrefix(hexHash, "0000") {
+			return hexHash, nonce
 		}
+		nonce++
 	}
-
-	duration := time.Since(start).Seconds()
-	metrics.JobDuration.Observe(duration)
-	metrics.JobsProcessed.Inc()
-
-	return hash, nonce
 }
