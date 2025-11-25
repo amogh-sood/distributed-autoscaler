@@ -35,21 +35,45 @@ This demonstrates real production-grade scaling behavior — a strong portfolio 
 
 ## Architecture Overview
 
-```mermaid
-graph TD
-    A[Client] -->|HTTP POST /hash| B[API Service]
-    A -->|HTTP GET /job/{id}| B
-    B -->|Publish Job| C[Kafka Queue]
-    C -->|Consume Messages| D[Worker Pool]
-    D -->|Store Results| E[Redis]
-    B -->|Query Results| E
-    
-    F[Prometheus] -->|Scrape Metrics| B
-    F -->|Scrape Metrics| D
-    G[Grafana] -->|Query Data| F
-    
-    H[Kubernetes HPA] -->|Scale Workers| D
-    F -->|CPU Metrics| H
+```
+                    ┌──────────────────┐
+                    │      Client      │
+                    └─────────┬────────┘
+                              │ HTTP
+                              ▼
+                    ┌──────────────────┐
+                    │       API        │
+                    │ (Go + Gin/Fiber) │
+                    └─────────┬────────┘
+                              │ Push job
+                              ▼
+                        ┌───────────┐
+                        │   Kafka   │
+                        └─────┬─────┘
+                              │ Consume
+                              ▼
+                    ┌──────────────────┐
+                    │     Worker       │
+                    │   (Go service)   │
+                    └─────────┬────────┘
+                              │ Write result
+                              ▼
+                         ┌─────────┐
+                         │  Redis  │
+                         └─────────┘
+
+     ┌─────────────┐       ┌──────────────┐
+     │ Prometheus  │◄──────┤ Worker & API │  (9090 metrics)
+     └─────────────┘       └──────────────┘
+             │
+             ▼
+      ┌──────────────┐
+      │    Grafana    │
+      └──────────────┘
+
+        ┌──────────────┐
+        │ Kubernetes HPA│  <–– CPU-based autoscaling on workers
+        └──────────────┘
 ```
 
 **Data Flow:**
