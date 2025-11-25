@@ -1,0 +1,544 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "8"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"api","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"api"}},"template":{"metadata":{"labels":{"app":"api"}},"spec":{"containers":[{"image":"distributed-autoscaler-api:latest","imagePullPolicy":"IfNotPresent","name":"api","ports":[{"containerPort":8080},{"containerPort":9090}]}]}}}}
+  generation: 8
+  name: api
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: api
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-11-25T10:59:48-06:00"
+      labels:
+        app: api
+    spec:
+      containers:
+        - image: distributed-autoscaler-api:latest
+          imagePullPolicy: IfNotPresent
+          name: api
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 9090
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"api","namespace":"default"},"spec":{"ports":[{"name":"http","nodePort":30080,"port":8080,"targetPort":8080},{"name":"metrics","port":9090,"targetPort":9090}],"selector":{"app":"api"},"type":"NodePort"}}
+  name: api
+  namespace: default
+spec:
+  clusterIP: 10.96.224.113
+  clusterIPs:
+    - 10.96.224.113
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http
+      nodePort: 30080
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: metrics
+      nodePort: 30937
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: api
+  sessionAffinity: None
+  type: NodePort
+---
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+      - containerPort: 30090
+        hostPort: 30090
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"autoscaling/v2","kind":"HorizontalPodAutoscaler","metadata":{"annotations":{},"name":"worker-hpa","namespace":"default"},"spec":{"maxReplicas":10,"metrics":[{"resource":{"name":"cpu","target":{"averageUtilization":70,"type":"Utilization"}},"type":"Resource"}],"minReplicas":1,"scaleTargetRef":{"apiVersion":"apps/v1","kind":"Deployment","name":"worker"}}}
+  name: worker-hpa
+  namespace: default
+spec:
+  maxReplicas: 10
+  metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 70
+          type: Utilization
+      type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kafka.strimzi.io/v1","kind":"Kafka","metadata":{"annotations":{},"name":"my-cluster","namespace":"kafka"},"spec":{"entityOperator":{"topicOperator":{},"userOperator":{}},"kafka":{"config":{"default.replication.factor":1,"min.insync.replicas":1,"offsets.topic.replication.factor":1,"transaction.state.log.min.isr":1,"transaction.state.log.replication.factor":1},"listeners":[{"name":"plain","port":9092,"tls":false,"type":"internal"}],"metadataVersion":"4.1-IV1","version":"4.1.1"}}}
+  generation: 1
+  name: my-cluster
+  namespace: kafka
+spec:
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  kafka:
+    config:
+      default.replication.factor: 1
+      min.insync.replicas: 1
+      offsets.topic.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      transaction.state.log.replication.factor: 1
+    listeners:
+      - name: plain
+        port: 9092
+        tls: false
+        type: internal
+    metadataVersion: 4.1-IV1
+    version: 4.1.1
+---
+apiVersion: v1
+items:
+  - apiVersion: kafka.strimzi.io/v1
+    kind: KafkaNodePool
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/last-applied-configuration: |
+          {"apiVersion":"kafka.strimzi.io/v1","kind":"KafkaNodePool","metadata":{"annotations":{},"labels":{"strimzi.io/cluster":"my-cluster"},"name":"dual-role","namespace":"kafka"},"spec":{"replicas":1,"roles":["controller","broker"],"storage":{"kraftMetadata":"shared","type":"ephemeral"}}}
+      creationTimestamp: "2025-11-25T03:06:25Z"
+      generation: 1
+      labels:
+        strimzi.io/cluster: my-cluster
+      name: dual-role
+      namespace: kafka
+      resourceVersion: "13691"
+      uid: 6fc24600-fa3c-4d4b-9319-ab8cc729029d
+    spec:
+      replicas: 1
+      roles:
+        - controller
+        - broker
+      storage:
+        kraftMetadata: shared
+        type: ephemeral
+    status:
+      clusterId: eyd64ECtSvKyZLiJfgam-g
+      conditions: []
+      labelSelector: strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=dual-role
+      nodeIds:
+        - 0
+      observedGeneration: 1
+      replicas: 1
+      roles:
+        - controller
+        - broker
+kind: List
+metadata: {}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  storage:
+    type: ephemeral
+    kraftMetadata: shared
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: kafka
+spec:
+  kafka:
+    version: 4.1.1
+    metadataVersion: 4.1-IV1
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      default.replication.factor: 1
+      min.insync.replicas: 1
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+  labels:
+    app: strimzi
+  name: strimzi-cluster-operator
+  namespace: kafka
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      name: strimzi-cluster-operator
+      strimzi.io/kind: cluster-operator
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: strimzi-cluster-operator
+        strimzi.io/kind: cluster-operator
+    spec:
+      containers:
+        - args:
+            - /opt/strimzi/bin/cluster_operator_run.sh
+          env:
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "120000"
+            - name: STRIMZI_OPERATION_TIMEOUT_MS
+              value: "300000"
+            - name: STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE
+              value: quay.io/strimzi/kafka:0.49.0-kafka-4.1.1
+            - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
+              value: quay.io/strimzi/kafka:0.49.0-kafka-4.1.1
+            - name: STRIMZI_KAFKA_IMAGES
+              value: |
+                4.0.0=quay.io/strimzi/kafka:0.49.0-kafka-4.0.0
+                4.0.1=quay.io/strimzi/kafka:0.49.0-kafka-4.0.1
+                4.1.0=quay.io/strimzi/kafka:0.49.0-kafka-4.1.0
+                4.1.1=quay.io/strimzi/kafka:0.49.0-kafka-4.1.1
+            - name: STRIMZI_KAFKA_CONNECT_IMAGES
+              value: |
+                4.0.0=quay.io/strimzi/kafka:0.49.0-kafka-4.0.0
+                4.0.1=quay.io/strimzi/kafka:0.49.0-kafka-4.0.1
+                4.1.0=quay.io/strimzi/kafka:0.49.0-kafka-4.1.0
+                4.1.1=quay.io/strimzi/kafka:0.49.0-kafka-4.1.1
+            - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
+              value: |
+                4.0.0=quay.io/strimzi/kafka:0.49.0-kafka-4.0.0
+                4.0.1=quay.io/strimzi/kafka:0.49.0-kafka-4.0.1
+                4.1.0=quay.io/strimzi/kafka:0.49.0-kafka-4.1.0
+                4.1.1=quay.io/strimzi/kafka:0.49.0-kafka-4.1.1
+            - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
+              value: quay.io/strimzi/operator:0.49.0
+            - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
+              value: quay.io/strimzi/operator:0.49.0
+            - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
+              value: quay.io/strimzi/operator:0.49.0
+            - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
+              value: quay.io/strimzi/kafka-bridge:0.33.1
+            - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
+              value: quay.io/strimzi/kaniko-executor:0.49.0
+            - name: STRIMZI_DEFAULT_BUILDAH_IMAGE
+              value: quay.io/strimzi/buildah:0.49.0
+            - name: STRIMZI_DEFAULT_MAVEN_BUILDER
+              value: quay.io/strimzi/maven-builder:0.49.0
+            - name: STRIMZI_OPERATOR_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_FEATURE_GATES
+            - name: STRIMZI_LEADER_ELECTION_ENABLED
+              value: "true"
+            - name: STRIMZI_LEADER_ELECTION_LEASE_NAME
+              value: strimzi-cluster-operator
+            - name: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_LEADER_ELECTION_IDENTITY
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+          image: quay.io/strimzi/operator:0.49.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthy
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: strimzi-cluster-operator
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: "1"
+              memory: 384Mi
+            requests:
+              cpu: 200m
+              memory: 384Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /tmp
+              name: strimzi-tmp
+            - mountPath: /opt/strimzi/custom-config/
+              name: co-config-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: strimzi-cluster-operator
+      serviceAccountName: strimzi-cluster-operator
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+          name: strimzi-tmp
+        - configMap:
+            defaultMode: 420
+            name: strimzi-cluster-operator
+          name: co-config-volume
+---
+apiVersion: v1
+data:
+  prometheus-additional.yaml: |
+    - job_name: 'worker-metrics'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: worker
+
+    - job_name: 'api-metrics'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: api
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"prometheus-additional.yaml":"- job_name: 'worker-metrics'\n  kubernetes_sd_configs:\n  - role: pod\n  relabel_configs:\n  - source_labels: [__meta_kubernetes_pod_label_app]\n    action: keep\n    regex: worker\n\n- job_name: 'api-metrics'\n  kubernetes_sd_configs:\n  - role: pod\n  relabel_configs:\n  - source_labels: [__meta_kubernetes_pod_label_app]\n    action: keep\n    regex: api\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"additional-scrape-configs","namespace":"monitoring"}}
+  name: additional-scrape-configs
+  namespace: monitoring
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"redis","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"redis"}},"template":{"metadata":{"labels":{"app":"redis"}},"spec":{"containers":[{"image":"redis:7","name":"redis","ports":[{"containerPort":6379}]}]}}}}
+  generation: 1
+  name: redis
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: redis
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - image: redis:7
+          imagePullPolicy: IfNotPresent
+          name: redis
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"redis","namespace":"default"},"spec":{"ports":[{"name":"redis","port":6379,"targetPort":6379}],"selector":{"app":"redis"},"type":"ClusterIP"}}
+  name: redis
+  namespace: default
+spec:
+  clusterIP: 10.96.194.167
+  clusterIPs:
+    - 10.96.194.167
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: redis
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+  selector:
+    app: redis
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "8"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"worker","namespace":"default"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"worker"}},"template":{"metadata":{"labels":{"app":"worker"}},"spec":{"containers":[{"image":"distributed-autoscaler-worker:latest","imagePullPolicy":"IfNotPresent","name":"worker","ports":[{"containerPort":9090}],"resources":{"limits":{"cpu":"500m"},"requests":{"cpu":"100m"}}}]}}}}
+  generation: 18
+  name: worker
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 8
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: worker
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-11-25T10:59:48-06:00"
+      labels:
+        app: worker
+    spec:
+      containers:
+        - image: distributed-autoscaler-worker:latest
+          imagePullPolicy: IfNotPresent
+          name: worker
+          ports:
+            - containerPort: 9090
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 100m
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"worker","namespace":"default"},"spec":{"ports":[{"name":"metrics","port":9090,"targetPort":9090}],"selector":{"app":"worker"},"type":"ClusterIP"}}
+  name: worker
+  namespace: default
+spec:
+  clusterIP: 10.96.30.55
+  clusterIPs:
+    - 10.96.30.55
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: metrics
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: worker
+  sessionAffinity: None
+  type: ClusterIP

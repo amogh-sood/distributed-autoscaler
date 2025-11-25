@@ -1,0 +1,60 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kafka.strimzi.io/v1","kind":"Kafka","metadata":{"annotations":{},"name":"my-cluster","namespace":"kafka"},"spec":{"entityOperator":{"topicOperator":{},"userOperator":{}},"kafka":{"config":{"default.replication.factor":1,"min.insync.replicas":1,"offsets.topic.replication.factor":1,"transaction.state.log.min.isr":1,"transaction.state.log.replication.factor":1},"listeners":[{"name":"plain","port":9092,"tls":false,"type":"internal"}],"metadataVersion":"4.1-IV1","version":"4.1.1"}}}
+  creationTimestamp: "2025-11-25T03:08:13Z"
+  generation: 1
+  name: my-cluster
+  namespace: kafka
+  resourceVersion: "13876"
+  uid: da66eaab-aced-4e93-abba-239e80b1ea7f
+spec:
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  kafka:
+    config:
+      default.replication.factor: 1
+      min.insync.replicas: 1
+      offsets.topic.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      transaction.state.log.replication.factor: 1
+    listeners:
+    - name: plain
+      port: 9092
+      tls: false
+      type: internal
+    metadataVersion: 4.1-IV1
+    version: 4.1.1
+status:
+  clusterId: eyd64ECtSvKyZLiJfgam-g
+  conditions:
+  - lastTransitionTime: "2025-11-25T03:08:30.949555254Z"
+    message: A Kafka cluster with a single broker node and ephemeral storage will
+      lose topic messages after any restart or rolling update.
+    reason: KafkaStorage
+    status: "True"
+    type: Warning
+  - lastTransitionTime: "2025-11-25T03:08:30.949588129Z"
+    message: A Kafka cluster with a single controller node and ephemeral storage will
+      lose data after any restart or rolling update.
+    reason: KafkaStorage
+    status: "True"
+    type: Warning
+  - lastTransitionTime: "2025-11-25T03:09:16.665411595Z"
+    status: "True"
+    type: Ready
+  kafkaMetadataVersion: 4.1-IV1
+  kafkaNodePools:
+  - name: dual-role
+  kafkaVersion: 4.1.1
+  listeners:
+  - addresses:
+    - host: my-cluster-kafka-bootstrap.kafka.svc
+      port: 9092
+    bootstrapServers: my-cluster-kafka-bootstrap.kafka.svc:9092
+    name: plain
+  observedGeneration: 1
+  operatorLastSuccessfulVersion: 0.49.0
