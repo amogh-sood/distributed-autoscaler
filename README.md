@@ -416,6 +416,84 @@ Building this system provides experience with:
 
 ---
 
+## Kafka Deployment Issue - Detailed Analysis
+
+During deployment, a critical Kafka issue was encountered related to the KRaft mode configuration and cluster readiness. The problem manifested as Kafka brokers failing to reach the `Ready` state within the expected timeout, causing cascading failures in the worker service consuming from Kafka.
+
+### Root Cause
+
+- The Kafka deployment was configured with KRaft mode enabled but lacked proper controller quorum setup.
+- The `kafka.yaml` manifest did not specify controller nodes correctly, leading to broker controller election failures.
+- Strimzi operator version mismatch caused incompatibilities with the Kafka cluster CRDs.
+
+### Diagnostic Steps
+
+1. **Check Kafka Pod Logs:**
+
+```bash
+kubectl logs kafka/my-cluster-kafka-0 -n kafka
+```
+
+Look for errors such as:
+
+```
+ERROR Controller failed to start due to quorum not achieved
+```
+
+2. **Verify Kafka Cluster CRD:**
+
+```bash
+kubectl get kafka -n kafka -o yaml
+```
+
+Ensure `spec.kraft` is enabled and `controllerQuorumVoters` are correctly set.
+
+3. **Operator Version:**
+
+```bash
+kubectl get deployment strimzi-cluster-operator -n kafka -o yaml | grep image
+```
+
+Confirm the operator version supports KRaft mode.
+
+### Resolution
+
+- Updated `kafka.yaml` to include proper KRaft controller quorum configuration:
+
+```yaml
+spec:
+  kafka:
+    version: 3.3.1
+    replicas: 3
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      process.roles: broker,controller
+      node.id: 1
+      controller.quorum.voters: 1@my-cluster-kafka-0.my-cluster-kafka-brokers.kafka.svc.cluster.local:9093,2@my-cluster-kafka-1.my-cluster-kafka-brokers.kafka.svc.cluster.local:9093,3@my-cluster-kafka-2.my-cluster-kafka-brokers.kafka.svc.cluster.local:9093
+      controller.listener.names: CONTROLLER
+    listenersConfig:
+      - name: CONTROLLER
+        port: 9093
+        type: internal
+        tls: false
+```
+
+- Upgraded Strimzi operator to latest stable release supporting KRaft.
+- Increased Kafka pod startup timeout in deployment manifests.
+
+### Lessons Learned
+
+- Always verify operator compatibility with Kafka version and mode.
+- KRaft mode requires explicit controller quorum configuration.
+- Monitor Kafka pod logs closely during startup for early detection.
+- Use Strimzi community resources for best practices on KRaft deployments.
+
+---
+
 ## Future Enhancements
 
 - **GCP Deployment**: GKE, Cloud Load Balancer, Cloud SQL
