@@ -19,10 +19,10 @@ type Server struct {
 
 func New() *Server {
 	// init kafka
-	producer := kafka.NewProducer("localhost:9092", "jobs")
+	producer := kafka.NewProducer("my-cluster-kafka-bootstrap.kafka:9092", "jobs")
 
 	// init redis
-	redisClient := redis.New("localhost:6379")
+	redisClient := redis.New("redis:6379")
 
 	r := chi.NewRouter()
 

@@ -24,9 +24,9 @@ func main() {
 	}()
 
 	// Redis
-	redisClient := redis.New("localhost:6379")
+	redisClient := redis.New("redis:6379")
 
 	// Kafka consumer
-	c := consumer.NewConsumer("localhost:9092", "jobs", "worker-group", redisClient)
+	c := consumer.NewConsumer("my-cluster-kafka-bootstrap.kafka:9092", "jobs", "worker-group", redisClient)
 	c.Start()
 }
