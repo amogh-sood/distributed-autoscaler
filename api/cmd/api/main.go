@@ -2,17 +2,22 @@ package main
 
 import (
 	"log"
+	"net/http"
 
-	"github.com/amogh-sood/distributed-autoscaler/api/internal/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/amogh-sood/distributed-autoscaler/api/internal/server"
 )
 
 func main() {
-	metrics.Register()
-	srv := server.New()
-
 	log.Println("Starting API service...")
-	if err := srv.Start(":8080"); err != nil {
-		log.Fatalf("API failed: %v", err)
-	}
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		log.Println("API metrics on :9090/metrics")
+		http.ListenAndServe(":9090", nil)
+	}()
+
+	srv := server.New()
+	srv.Start(":8080")
 }
