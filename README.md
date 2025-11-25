@@ -1,4 +1,4 @@
-# 🚀 Distributed Autoscaler — High-Performance Hashing System
+# Distributed Autoscaler — High-Performance Hashing System
 
 A horizontally scalable, observable, locally deployable distributed system demonstrating production-grade engineering patterns.
 
@@ -17,7 +17,7 @@ Everything is fully containerized and orchestrated on Kubernetes with proper obs
 
 ---
 
-## 📈 Performance Achieved
+## Performance Achieved
 
 Load-test conducted on an Apple M2 Pro (12 CPU / 19 GPU):
 
@@ -33,7 +33,7 @@ This demonstrates real production-grade scaling behavior — a strong portfolio 
 
 ---
 
-## 📦 Architecture Overview
+## Architecture Overview
 
 ```mermaid
 graph TD
@@ -63,7 +63,7 @@ This is a real distributed streaming system with autoscaling & observability bui
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
 ```
 distributed-autoscaler/
@@ -96,7 +96,7 @@ distributed-autoscaler/
 │   │   └── metrics/       # Worker performance metrics
 │   │       └── metrics.go
 │   └── Dockerfile
-├── k6/                     # Load testing
+├── k6/                     # Load Testing
 │   └── hash_test.js       # k6 performance test script
 ├── k8s/                    # Kubernetes manifests
 │   ├── api/               # API deployment & service
@@ -134,7 +134,7 @@ distributed-autoscaler/
 
 ---
 
-## ▶️ Local Deployment
+## Local Deployment
 
 ### Prerequisites
 - Kubernetes cluster (Minikube, Kind, or any K8s)
@@ -210,7 +210,7 @@ curl -X POST http://localhost:30080/hash \
 
 ---
 
-## 📊 Accessing Services
+## Accessing Services
 
 ### API Service
 ```bash
@@ -238,7 +238,7 @@ kubectl get secret monitoring-grafana -n monitoring -o jsonpath="{.data.admin-pa
 
 ---
 
-## 🔥 Load Testing
+## Load Testing
 
 ### Install k6
 ```bash
@@ -266,7 +266,7 @@ k6 run --vus 100 --duration 2m k6/hash_test.js
 
 ---
 
-## 🛠 Technical Implementation
+## Technical Implementation
 
 ### Core Components
 
@@ -307,7 +307,7 @@ k6 run --vus 100 --duration 2m k6/hash_test.js
 
 ---
 
-## 🧪 Development & Testing
+## Development & Testing
 
 ### Local Development
 ```bash
@@ -334,9 +334,8 @@ curl http://localhost:8080/job/uuid-here
 
 ---
 
-## 🔒 Security Considerations
+## Security Considerations
 
-- **Authentication**: Ready for JWT/OAuth integration
 - **Input Validation**: JSON schema validation for all inputs
 - **Resource Limits**: Pod resource constraints and limits
 - **Network Policies**: Kubernetes network isolation ready
@@ -344,7 +343,7 @@ curl http://localhost:8080/job/uuid-here
 
 ---
 
-## 🚀 Production Readiness
+## Production Readiness
 
 ### Scalability Features
 - Horizontal pod autoscaling
@@ -366,21 +365,20 @@ curl http://localhost:8080/job/uuid-here
 
 ---
 
-## 🏁 Key Achievements
+## Key Achievements
 
 This project demonstrates senior-level engineering capabilities:
 
-✅ **System Design**: Event-driven architecture with proper separation of concerns  
-✅ **Performance**: 7.6k RPS sustained on laptop hardware  
-✅ **Scalability**: Automatic horizontal scaling based on load  
-✅ **Observability**: Comprehensive monitoring with Prometheus/Grafana  
-✅ **Reliability**: Zero message loss, graceful error handling  
-✅ **DevOps**: Full CI/CD ready with containerization and orchestration  
-✅ **Testing**: Performance testing with realistic load patterns  
+**System Design**: Event-driven architecture with proper separation of concerns  
+**Performance**: 7.6k RPS sustained on laptop hardware  
+**Scalability**: Automatic horizontal scaling based on load  
+**Observability**: Comprehensive monitoring with Prometheus/Grafana  
+**Reliability**: Zero message loss, graceful error handling  
+**Testing**: Performance testing with realistic load patterns  
 
 ---
 
-## 📚 Learning Outcomes
+## Learning Outcomes
 
 Building this system provides experience with:
 - Distributed systems design patterns
@@ -394,7 +392,7 @@ Building this system provides experience with:
 
 ---
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 - **GCP Deployment**: GKE, Cloud Load Balancer, Cloud SQL
 - **Advanced Autoscaling**: Custom metrics based on Kafka lag
@@ -404,13 +402,13 @@ Building this system provides experience with:
 
 ---
 
-## 📄 License
+## License
 
 Apache License 2.0 - Perfect for professional portfolios and commercial use.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 This is a portfolio project demonstrating engineering capabilities. Feel free to fork, modify, and use as a learning resource.
 
